@@ -17,6 +17,6 @@ B. Kulis and M. Jordan, "Revisiting k-means: New Algorithms via Bayesian Nonpara
  
 ### Dependencies
 
-Matlab 2015a
-Python 2.7
+Matlab 2015a  
+Python 2.7  
 Eigen3
