@@ -1,7 +1,6 @@
 // dpmeans.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #include "dpmeans.h"
 #include <iostream>
 #include <limits>
@@ -363,12 +362,13 @@ void load_iris(Ref<MatrixXf> X, Ref<VectorXi> y)
 	
 }
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {	
+	
 	//generate data
 	//int rows = 150, cols = 4;
 	//MatrixXf X = MatrixXf::Random(rows, cols);
-
+	
 	//load iris	
 	int nrows = 0;
 	int ncols = 0;
@@ -379,7 +379,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		fin1 >> nrows >> ncols;
 		fin1.close();
 	}
-	else cout << "Unable to open fin1\n";
+	else cout << "Unable to open data file\n";
 	cout << "nrows = " << nrows << endl;
 	cout << "ncols = " << ncols << endl;
 
@@ -400,10 +400,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	float nmi;
 	nmi = dp.compute_nmi(z, y);
 	cout << "nmi = " << endl << nmi << endl;
-
-	//TODO: CMakeFile
-	//TODO: profiling the code
-	//TODO: gpu implementation
 
 	return 0;
 }
