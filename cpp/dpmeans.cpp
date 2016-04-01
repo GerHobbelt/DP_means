@@ -9,6 +9,8 @@
 #include <cmath>
 #include <ctime>
 #include <unordered_set>
+#include <fstream>
+#include <vector>
 
 #include <Eigen/Dense>
 
@@ -17,7 +19,7 @@ using namespace Eigen;
 
 mt19937 rng;
 
-dpmeans::dpmeans(Matrix<float, Dynamic, Dynamic> X)
+dpmeans::dpmeans(const Ref<const MatrixXf>& X)
 {
 	K = 1;
 	K_init = 4;
@@ -31,8 +33,9 @@ dpmeans::dpmeans(Matrix<float, Dynamic, Dynamic> X)
 	pik = VectorXf::Ones(K);
 		
     //init mu
-	//mu.row(0) = X.colwise().sum() / (float)n;
+	mu.row(0) = X.colwise().sum() / (float) n;
 
+	cout << "mu = " << endl << mu << endl;
     //init lambda
 	lambda = kpp_init(X, K_init);
 
@@ -41,7 +44,7 @@ dpmeans::dpmeans(Matrix<float, Dynamic, Dynamic> X)
 	vector<double> em_time(max_iter, 0);
 }
 
-float dpmeans::kpp_init(Matrix<float, Dynamic, Dynamic> X, int k)
+float dpmeans::kpp_init(const Ref<const MatrixXf>& X, int k)
 {
 	// k++ init 
 	// lambda is max distance to k++ means
@@ -66,6 +69,9 @@ float dpmeans::kpp_init(Matrix<float, Dynamic, Dynamic> X, int k)
 	{
 		D = X - mu.row(i - 1).replicate(n, 1);
 		dist = dist.cwiseMin(D.cwiseProduct(D).rowwise().sum());
+		cout << "X = " << endl << X << endl;
+		cout << "mu = " << endl << mu << endl;
+		cout << "dist = " << endl << dist << endl;
 
 		//sample discrete
 		pdist = dist / dist.sum();
@@ -92,7 +98,7 @@ float dpmeans::kpp_init(Matrix<float, Dynamic, Dynamic> X, int k)
 	return lambda;
 }
 
-VectorXi dpmeans::dpmeans_fit(Matrix<float, Dynamic, Dynamic> X)
+VectorXi dpmeans::dpmeans_fit(const Ref<const MatrixXf>& X)
 {
 
 	int n = X.rows(); 
@@ -116,6 +122,7 @@ VectorXi dpmeans::dpmeans_fit(Matrix<float, Dynamic, Dynamic> X)
 			Xm = X - mu.row(k).replicate(n, 1);
 			dist.col(k) = Xm.cwiseProduct(Xm).rowwise().sum();			
 		}
+		cout << "mu = " << endl << mu << endl;
 		cout << "dist = " << endl << dist << endl;
 
 		//update labels
@@ -223,7 +230,7 @@ VectorXi dpmeans::dpmeans_fit(Matrix<float, Dynamic, Dynamic> X)
 	return z;
 }
 
-float dpmeans::compute_nmi(VectorXi z1, VectorXi z2)
+float dpmeans::compute_nmi(const Ref<const VectorXi>& z1, const Ref<const VectorXi>& z2)
 {
 	// compute normalized mutual information
 	float nmi = 0.0;
@@ -314,47 +321,88 @@ void dpmeans::display_params()
 	cout << "Lambda: " << this->lambda << endl;	
 }
 
+void load_iris(Ref<MatrixXf> X, Ref<VectorXi> y)
+{	
+	
+	//read-in labels
+	int cnt = 0;
+	string line;
+	ifstream fin2("./data/iris_labels.txt");
+	if (fin2.is_open())
+	{
+		while (getline(fin2, line))
+		{
+			y(cnt) = stoi(line);
+			cnt++;
+		}
+		fin2.close();
+	}
+	else cout << "Unable to open fin2\n";
+	//cout << "y = " << endl << y << endl;
+	//cout << "y.size = " << endl << y.size() << endl;
+
+	//read-in data
+	cnt = 0;
+	int nrows = 0;
+	int ncols = 0;
+	ifstream fin3("./data/iris_data.txt");
+	if (fin3.is_open())
+	{
+		fin3 >> nrows >> ncols;
+		for (int row = 0; row < nrows; row++)
+			for (int col = 0; col < ncols; col++)
+			{
+				float num = 0.0;
+				fin3 >> num;
+				X(row, col) = num;
+			}
+		fin3.close();
+	}
+	else cout << "Unable to open fin3\n";
+	//cout << "X = " << endl << X << endl;
+	
+}
 
 int _tmain(int argc, _TCHAR* argv[])
-{
+{	
 	//generate data
+	//int rows = 150, cols = 4;
+	//MatrixXf X = MatrixXf::Random(rows, cols);
 
-	int rows = 10, cols = 2;
-	MatrixXf X = MatrixXf::Random(rows, cols);
+	//load iris	
+	int nrows = 0;
+	int ncols = 0;
+	string line;
+	ifstream fin1("./data/iris_data.txt");
+	if (fin1.is_open())
+	{
+		fin1 >> nrows >> ncols;
+		fin1.close();
+	}
+	else cout << "Unable to open fin1\n";
+	cout << "nrows = " << nrows << endl;
+	cout << "ncols = " << ncols << endl;
 
+	VectorXi y = VectorXi::Zero(nrows);
+	MatrixXf X = MatrixXf::Zero(nrows, ncols);
+
+	load_iris(X,y);
+	//cout << "y = " << endl << y << endl;
+	//cout << "X = " << endl << X << endl;
+	
 	dpmeans dp(X);
 	dp.display_params();
 
-	int k = 4;
-	float lambda;
-	lambda = dp.kpp_init(X, k);
-	
 	VectorXi z;
 	z = dp.dpmeans_fit(X);
 	cout << "z = " << endl << z << endl;
 	
 	float nmi;
-	VectorXi z1(7);
-	VectorXi z2(7);
-	z1 <<  0, 0, 1, 1, 1, 2, 2;
-	z2 <<  0, 1, 1, 1, 1, 2, 2;
-	cout << "z1 = " << endl << z1 << endl;
-	cout << "z2 = " << endl << z1 << endl;	
-	nmi = dp.compute_nmi(z1, z2);
+	nmi = dp.compute_nmi(z, y);
 	cout << "nmi = " << endl << nmi << endl;
-		
-	/*
-	iris = load_iris()
-	X = iris.data
-	y = iris.target
 
-	dp = dpmeans(X)  //constructor
-	labels, obj, em_time = dp.fit(X)
-	dp.display_params()
-	dp.generate_plots(X)
-	*/
-
-	//TODO: check pass by reference
+	//TODO: CMakeFile
+	//TODO: profiling the code
 	//TODO: gpu implementation
 
 	return 0;
