@@ -1,5 +1,6 @@
 from sklearn.datasets import load_iris
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import time
 
@@ -37,7 +38,7 @@ class dpmeans:
         mu = np.zeros((k,d))        
         dist = np.inf*np.ones(n)
                 
-        mu[0,:] = X[np.ceil(np.random.rand()*n-1),:]
+        mu[0,:] = X[np.ceil(np.random.rand()*n-1).astype(int),:]
         for i in range(1,k):
             D = X-np.tile(mu[i-1,:],(n,1))
             dist = np.minimum(dist, np.sum(D*D,1))
@@ -55,7 +56,7 @@ class dpmeans:
         
         obj = np.zeros(max_iter)
         em_time = np.zeros(max_iter)
-        print 'running dpmeans...'
+        print('running dpmeans...')
         
         for iter in range(max_iter):
             tic = time.time()
@@ -140,12 +141,13 @@ class dpmeans:
 
     def generate_plots(self,X):
 
+        cmap = mpl.colormaps['Set1']
         plt.close('all')
         plt.figure(0)
         for kk in range(self.K):
             #idx = np.where(self.z == kk)
             plt.scatter(X[self.z == kk,0], X[self.z == kk,1], \
-                        s = 100, marker = 'o', color = np.random.rand(3,1), label = str(kk))
+                        s = 100, marker = 'o', color = cmap(kk), label = str(kk))
         #end for
         plt.xlabel('X1')
         plt.ylabel('X2')
@@ -173,19 +175,19 @@ class dpmeans:
                             
     def display_params(self):
         
-        print 'K = %d'% self.K
-        print 'd = %d'% self.d
-        print 'Labels:'
-        print self.z
-        print 'Means:'
-        print self.mu
-        print 'Sigma:'
-        print self.sigma
-        print 'Counts:'
-        print self.nk
-        print 'Proportions:'
-        print self.pik
-        print 'Lambda: %.2f'% self.Lambda
+        print('K = %d'% self.K)
+        print('d = %d'% self.d)
+        print('Labels:')
+        print(self.z)
+        print('Means:')
+        print(self.mu)
+        print('Sigma:')
+        print(self.sigma)
+        print('Counts:')
+        print(self.nk)
+        print('Proportions:')
+        print(self.pik)
+        print('Lambda: %.2f'% self.Lambda)
 
 
 if __name__ == "__main__":        
@@ -199,6 +201,6 @@ if __name__ == "__main__":
     dp.generate_plots(X)
 
     nmi = dp.compute_nmi(labels,y)    
-    print "NMI: %.4f" % nmi    
+    print("NMI: %.4f" % nmi)
     
         
